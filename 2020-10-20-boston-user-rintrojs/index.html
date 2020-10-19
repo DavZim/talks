@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>A brief introduction to the rintrojs package</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="David Zimmermann" />
+    <meta name="date" content="2020-10-20" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script src="libs/htmlwidgets-1.5.2/htmlwidgets.js"></script>
+    <script src="libs/viz-1.8.2/viz.js"></script>
+    <link href="libs/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+    <script src="libs/grViz-binding-1.0.6.1/grViz.js"></script>
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# A brief introduction to the <code>rintrojs</code> package
+## Explaining shiny apps made simple!
+### David Zimmermann
+### Cologne Intelligence
+### 2020-10-20
+
+---
+
+
+&lt;style type="text/css"&gt;
+a {
+  color: #dd4814;
+}
+.remark-inline-code {
+  color: #dd4814;
+}
+.remark-code {
+  font-size: 10px;
+}
+.smaller {
+  font-size: 10px;
+}
+.small {
+  font-size: 12px;
+}
+&lt;/style&gt;
+
+
+
+
+# What is `rintrojs`?
+
+.pull-left[
+- A wrapper for `intro.js`, which allows to create
+
+&gt; step-by-step guides and feature introductions
+
+- Easy to use in `shiny` applications
+]
+
+--
+
+.center[
+&lt;img src="introjs-screen.png" width="30%" /&gt;
+]
+
+---
+class: inverse, middle, center
+
+# Example 1
+See also `simple-app.R` at&lt;br&gt;[github.com/davzim/talks/2020-10-20-boston-user-rintrojs/examples/simple-app.R](https://github.com/DavZim/talks/blob/main/2020-10-20-boston-user-rintrojs/examples/simple-app.R)
+
+---
+# Why use `rintrojs`?
+
+What are the benefits of using guides and tooltips?
+
+- Helps your users to understand the application, reduces hurdles and frictions
+- Shows the users the intended workflow
+- Highlights certain areas / new features
+- Shows definitions and can act as user facing documentation, e.g., variable definitions in tables
+
+.center[
+<div id="htmlwidget-43a845c843446c1e650f" style="width:700px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-43a845c843446c1e650f">{"x":{"diagram":"digraph {\n  graph [layout = dot, rankdir = LR]\n  \n  node [shape = rectangle]        \n  rec1 [label = \"1) Reduces hurdles and easier to understand\"]\n  rec2 [label = \"2) Happy user\"]\n  rec3 [label = \"3) More usage & acceptance\"]\n  rec4 [label = \"4) More projects?!\"]\n  \n  # edge definitions with the node IDs\n  rec1 -> rec2 -> rec3 -> rec4\n  }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+]
+
+---
+# Technology
+
+.pull-left[
+## `intro.js`
+
+JavaScript library which provides the guides/tooltip functionality
+
+Created by [Afshin Mehrabani](https://afshinm.name/) and [Benjamin J DeLong](https://bozdoz.com/) + [Community](https://github.com/usablica/intro.js/graphs/contributors)
+
+Lives here: https://introjs.com/
+
+License: AGPL v3.0 &amp; Commercial License
+]
+
+.pull-right[
+## `rintrojs`
+
+R package which acts as a wrapper around `intro.js`
+
+Created by [Carl Ganz](https://github.com/carlganz) + [Community](https://github.com/carlganz/rintrojs/graphs/contributors)
+
+Lives here: https://carlganz.github.io/rintrojs/
+
+License: AGPL v3.0
+]
+
+.smaller[
+If the AGPL / commercial license is not for you, have a look at John Coene's [`cicerone`](https://github.com/JohnCoene/cicerone) (based on [`driver.js`](https://kamranahmed.info/driver.js/), both MIT licensed) as an alternative to `rintrojs`.
+]
+
+---
+# Basic Usage
+
+Multiple ways to create a guide
+
+- write it directly in HTML tags (`intro.js` way)
+
+```html
+&lt;!--- Include introjs.js and introjs.css somewhere ---&gt;
+&lt;h1 data-step="1" data-intro="This is a tooltip!"&gt;Basic Usage&lt;/h1&gt;
+```
+
+--
+
+- use `rintrojs` and wrap elements with `introBox()`
+
+
+```r
+# In the UI of the shiny app
+introBox(
+  actionButton("btn", "Button"),
+  data.step = 1,
+  data.intro = "This is a button"
+)
+```
+
+--
+
+- Define a `data.frame` containing references to HTML elements and the tour information. 
+Start the tour depending on an event.
+
+
+```r
+# somewhere in the app
+step_df &lt;- data.frame(...)
+
+# in server
+observeEvent(input$startTour, {
+   introjs(session, options = list(steps = step_df))
+})
+```
+
+
+---
+# Basic Example based on `data.frame`
+
+.pull-left[
+Basic `shiny` application
+
+```r
+library(shiny)
+
+
+
+
+
+ui &lt;- fluidPage(
+  
+  actionButton("startTour", "Start the Tour"),
+  ...
+)
+
+
+server &lt;- function(input, output, session) {
+  ...
+  
+  
+  
+}
+
+shinyApp(ui, server)
+```
+]
+
+--
+
+.pull-right[
+Application with `rintrojs` tour
+
+```r
+library(shiny)
+*library(rintrojs)
+
+*step_df &lt;- ...
+
+ui &lt;- fluidPage(
+* introjsUI(),
+  actionButton("startTour", "Start the Tour"),
+  ...
+)
+
+server &lt;- function(input, output, session) {
+  ...
+  observeEvent(input$startTour, {
+*    introjs(session, options = list(steps = step_df))
+  })
+}
+
+shinyApp(ui, server)
+```
+.small[
+1. Load the `rintrojs` package
+2. Create a data.frame containing the tour information
+3. Use `introjsUI()` in the UI of the shiny app
+4. Call `introjs(session, options = list(steps = step_df))` to start the tour
+]]
+
+
+---
+# Example of `step_df`
+
+`step_df` might look like this
+
+
+|element           |intro                                      |
+|:-----------------|:------------------------------------------|
+|`NA`              |&amp;lt;h4&amp;gt;Welcome to R Intro JS&amp;lt;/h4&amp;gt; |
+|`.class-selector` |First element                              |
+|`#id-selector`    |Another cool tip                           |
+|`NA`              |Lastly, ...                                |
+
+--
+
+- variable `element` contains references to the CSS selectors, e.g., `.class-selector` and `#id-selector` 
+
+--
+
+- variable `intro` contains text for the tooltip, HTML is possible
+
+--
+
+- `NA` values in `element` refer to general tooltips without a specific reference
+
+---
+# Creation of `step_df`
+
+Multiple options to create `step_df`:
+
+1. load from external source (.csv, .json, ...)
+2. create in code (maybe in external script and source it?)
+
+--
+
+.pull-left[
+1. Load from external source (`.json`, `.csv`, ...)
+
+.smaller[in `introjs-data.json`]
+```
+[
+  {"intro":"&lt;h4&gt;Welcome to R Intro JS&lt;//h4&gt;"},
+  {"element":".class-selector", "intro":"First element"},
+  {"element":"#id-selector",    "intro":"Another cool tip"},
+  {"intro":"Lastly, ..."}
+]
+```
+in R
+```r
+step_df &lt;- jsonlite::read_json("introjs-data.json",
+                               simplifyVector = TRUE)
+```
+]
+
+--
+
+.pull-right[
+
+2. Create data.frame in `R`, e.g., using `dplyr::tribble()`
+
+```r
+step_df &lt;- dplyr::tribble(
+  ~element,          ~intro,
+  NA,                "&lt;h4&gt;Welcome to R Intro JS&lt;/h4&gt;",
+  ".class-selector", "First element",
+  "#id-selector",    "Another cool tip",
+  NA,                "Lastly, ..."
+)
+step_df
+```
+
+```
+## # A tibble: 4 x 2
+##   element         intro                         
+##   &lt;chr&gt;           &lt;chr&gt;                         
+## 1 &lt;NA&gt;            &lt;h4&gt;Welcome to R Intro JS&lt;/h4&gt;
+## 2 .class-selector First element                 
+## 3 #id-selector    Another cool tip              
+## 4 &lt;NA&gt;            Lastly, ...
+```
+]
+
+---
+# How to find selectors?
+
+- shiny IDs (`inputId`s), if used, are valid, e.g., `actionButton(inputId = "btn", "Button")`, `btn` is also the HTML id, referenced as `.btn`
+
+--
+
+- launch app and inspect element (right click) to find the right id or class of the element in the HTML source code
+
+--
+
+- explicitly give a class/id to an UI element in `shiny::fluidPage()` (or similar), e.g., 
+```r
+column(6, `id = "the-id"`,
+  ...
+)
+```
+
+--
+
+- wrap a `div(..., id = "the-id")` around some UI elements
+```r
+valueBox(
+  value = `div(123, id = "the-id")`
+)
+```
+--
+- Overwrite a function to also set an ID value, e.g., change `box()` to output 
+```html
+&lt;div class="col-sm-X" `id="the-id"`&gt;
+...
+```
+
+---
+# Other shiny packages
+
+`rintrojs` works nicely with other packages, e.g.,
+
+- `shinydashboard`
+- `DT`
+- `leaflet`
+- ...
+
+---
+class: inverse, center, middle
+# Example 2 - Widgets
+
+See also `complex-app.R` at&lt;br&gt;[github.com/davzim/talks/2020-10-20-boston-user-rintrojs/examples/complex-app.R](https://github.com/DavZim/talks/blob/main/2020-10-20-boston-user-rintrojs/examples/complex-app.R)
+---
+class: inverse, center, middle
+# Appendix
+
+---
+# Combining `rintrojs` with other tools
+
+- `shinydashboard`
+- Tables using `DT`
+- Interactive maps using `leaflet`
+- Useful tips using `glue`
+- Setting the width of the tooltip
+
+---
+
+# `shinydashboard`
+
+Basic `shinydashboard` elements:
+
+- Sidebar menu: `.sidebar-menu`
+- Current active sidebar menu: `.active`
+- Toggle sidebar: `.sidebar-toggle`
+- Message menu: `.messages-menu`
+- Box: `.col-sm-6` or `.box` (might highlight other boxes as well, use with caution!)
+- Info box: `.info-box`
+- Value box: `.small-box`
+
+--
+
+*Note:* referencing a single tab with `#shiny-tab-TABNAME` doesn't work properly, overwriting `dashboardSidebar()` might help though...
+
+--
+
+*Note:* to access the value and title of an info or value box, wrap the values in a `div(..., id = "the-id")`, e.g.
+
+
+```r
+valueBox(
+  value = div(123, id = "the-value"),
+  subtitle = div("A Value", id = "the-title")
+)
+```
+
+
+---
+# Tables using `DT`
+
+- Number of values to display: `.dataTables_length`
+- Filter input: `.dataTables_filter`
+- Actual table: `.dataTable`
+- Information about pagination etc: `.dataTables_info`
+- Actual pagination: `.dataTables_paginate`
+- Previous page: `.previous`
+- Current page: `.current`
+- Next page: `.next`
+
+Using a container to set IDs of columns to explain definitions, types, etc.
+
+see also: https://rstudio.github.io/DT/ # 2.6 Custom Table Container
+
+
+```r
+sketch &lt;- withTags(table(
+  class = "display",
+  thead(
+    tr(
+      th("Name", `id = "dt_name"`),
+      th("Miles per Gallon", `id = "dt_mpg"`),
+      th("Cylinders", `id = "dt_cyl"`)
+    )
+  )
+))
+DT::datatable(mtcars[, 1:2], container = sketch)
+```
+
+Then use `#dt_name` etc to reference single columns.
+
+---
+# Maps using `leaflet`
+
+- Zoom control panel: `.leaflet-control-zoom`
+- Zoom in: `.leaflet-control-zoom-in`
+- Zoom out: `.leaflet-control-zoom-out`
+- Allow fullscreen (from `leaflet.extras::addFullscreenControl()`)`.leaflet-control-fullscreen`
+- Legend: `.info`
+- Minimap: `.leaflet-control-minimap`
+- OSM Attribution: `.leaflet-control-attribution`
+
+---
+# Useful Tips
+
+`glue` for easily combining multiple lines
+
+```r
+library(glue)
+x &lt;- 42
+step_df &lt;- dplyr::tribble(
+  ~element,      ~intro,
+* ".some-class", glue("This is a first line",
+                      "This is a second line",
+                      "The value of x is {x}",
+                      "Still describing '.some-class'",
+*                     .sep = "&lt;br&gt;")
+)
+
+step_df$intro[1]
+```
+
+```
+## This is a first line&lt;br&gt;This is a second line&lt;br&gt;The value of x is 42&lt;br&gt;Still describing '.some-class'
+```
+
+---
+# Width of Tooltips
+
+Modify `.introjs-tooltip` width in your shiny UI code 
+
+
+```r
+tags$style(HTML(
+  ".introjs-tooltip {
+      max-width: 100%;
+      min-width: 500px;
+    }"
+))
+```
+
+see also https://github.com/carlganz/rintrojs/issues/5
+
+---
+# Contact
+
+Question? Feedback? All welcome:
+
+`$ whoami` David Zimmermann
+
+- sometimes I blog here: https://davzim.github.io (for email address see "About")
+- sometimes I write code here: https://github.com/davzim
+- this presentation: https://github.com/DavZim/talks/tree/main/2020-10-20-boston-user-rintrojs
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"highlightSpans": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
